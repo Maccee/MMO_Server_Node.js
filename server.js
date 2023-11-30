@@ -7,16 +7,13 @@ const cors = require('cors');
 
 const app = express();
 
-// Enable CORS for all routes
 app.use(cors());
 
-// Create the server
 const server = http.createServer(app);
 
-// Setup Socket.io with CORS configuration
 const io = socketIo(server, {
     cors: {
-        origin: "*", // Adjust the port to match your client app's URL
+        origin: "*", 
         methods: ["GET", "POST"]
     }
 });
@@ -24,11 +21,11 @@ const io = socketIo(server, {
 const balls = {};
 
 io.on('connection', (socket) => {
-    // Initialize ball position, color, and name for new connection
+    
     balls[socket.id] = { 
         x: 100, 
         y: 100, 
-        color: getRandomColor(), // Function to get random color
+        color: getRandomColor(), 
         name: '' 
     };
 
@@ -56,12 +53,9 @@ io.on('connection', (socket) => {
 });
 
 function getRandomColor() {
-    const colors = ['#FF5733', '#33FF57', '#3357FF', /* add 13 more colors */];
+    const colors = ['#FF5733', '#33FF57', '#3357FF'];
     return colors[Math.floor(Math.random() * colors.length)];
 }
-
-
-
 
 const port = process.env.PORT || 443;
 server.listen(port, () => console.log(`Server listening on port ${port}`));
