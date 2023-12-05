@@ -27,8 +27,8 @@ function getRandomColor() {
 }
 
 const players = {}; // Store the state of all players
-const GAME_WIDTH = 1000;
-const GAME_HEIGHT = 1000;
+const GAME_WIDTH = 2000;
+const GAME_HEIGHT = 2000;
 const PLAYER_WIDTH = 50;
 const PLAYER_HEIGHT = 50;
 const MOVEMENT_SPEED = 4;
@@ -36,12 +36,12 @@ const MOVEMENT_SPEED = 4;
 io.on("connection", (socket) => {
   console.log("A user connected:", socket.id);
   
-
   // Initialize the player with a random position
   players[socket.id] = {
-    x: getRandomNumber(200, 300),
-    y: getRandomNumber(200, 300),
+    x: getRandomNumber(100, 1900),
+    y: getRandomNumber(100, 1900),
     color: getRandomColor(),
+    isNew: true,
     
   };
 
@@ -70,6 +70,7 @@ io.on("connection", (socket) => {
         PLAYER_HEIGHT / 2, 
         Math.min(GAME_HEIGHT - PLAYER_HEIGHT / 2, players[socket.id].y + direction.y * MOVEMENT_SPEED)
       );
+      players[socket.id].isNew = false;
   
       // Broadcast the updated position
       io.emit("playersUpdate", players);
