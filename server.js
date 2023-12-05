@@ -26,23 +26,31 @@ function getRandomColor() {
   return color;
 }
 
-const players = {}; // Store the state of all balls
+const players = {}; // Store the state of all players
+const GAME_WIDTH = 1000;
+const GAME_HEIGHT = 1000;
+const PLAYER_WIDTH = 50;
+const PLAYER_HEIGHT = 50;
 const MOVEMENT_SPEED = 4;
 
 io.on("connection", (socket) => {
   console.log("A user connected:", socket.id);
   
 
-  // Initialize the player with a random position and lastMove timestamp
+  // Initialize the player with a random position
   players[socket.id] = {
-    x: getRandomNumber(0, 1880),
-    y: getRandomNumber(0, 980),
+    x: getRandomNumber(200, 300),
+    y: getRandomNumber(200, 300),
     color: getRandomColor(),
     
   };
 
   // Emit the current state of all players to the newly connected user
   socket.emit("playersUpdate", players);
+  // Emit gamearea
+  socket.emit("gameArea", { width: GAME_WIDTH, height: GAME_HEIGHT });
+  // player size
+  socket.emit("playerSize", { width: PLAYER_WIDTH, height: PLAYER_HEIGHT });
 
   // Broadcast the new player to all other users
   socket.broadcast.emit("newPlayer", {
@@ -50,27 +58,24 @@ io.on("connection", (socket) => {
     player: players[socket.id],
   });
 
-  // Update the lastMove timestamp when the player moves
-  socket.on("movePlayer", (data) => {
-    if (players[socket.id]) {
-      players[socket.id].x = data.x;
-      players[socket.id].y = data.y;
-      
-      io.emit("playersUpdate", players);
-    }
-  });
-
   // WASD
   socket.on("playerMove", (direction) => {
     if (players[socket.id]) {
-      // Update player position based on direction and speed
-      players[socket.id].x += direction.x * MOVEMENT_SPEED;
-      players[socket.id].y += direction.y * MOVEMENT_SPEED;
+      // Update player position with clamping
+      players[socket.id].x = Math.max(
+        PLAYER_WIDTH / 2, 
+        Math.min(GAME_WIDTH - PLAYER_WIDTH / 2, players[socket.id].x + direction.x * MOVEMENT_SPEED)
+      );
+      players[socket.id].y = Math.max(
+        PLAYER_HEIGHT / 2, 
+        Math.min(GAME_HEIGHT - PLAYER_HEIGHT / 2, players[socket.id].y + direction.y * MOVEMENT_SPEED)
+      );
   
       // Broadcast the updated position
       io.emit("playersUpdate", players);
     }
   });
+  
 
   
 
