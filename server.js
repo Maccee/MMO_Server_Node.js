@@ -35,22 +35,20 @@ const MOVEMENT_SPEED = 4;
 
 io.on("connection", (socket) => {
   console.log("A user connected:", socket.id);
-  
-  // Initialize the player with a random position
+  // Emit gamearea
+  socket.emit("gameArea", { width: GAME_WIDTH, height: GAME_HEIGHT });
+
+  // Initialize the player
   players[socket.id] = {
     x: getRandomNumber(100, 1900),
     y: getRandomNumber(100, 1900),
     color: getRandomColor(),
     isNew: true,
-    
+    size: { width: PLAYER_WIDTH, height: PLAYER_HEIGHT },
   };
 
   // Emit the current state of all players to the newly connected user
   socket.emit("playersUpdate", players);
-  // Emit gamearea
-  socket.emit("gameArea", { width: GAME_WIDTH, height: GAME_HEIGHT });
-  // player size
-  socket.emit("playerSize", { width: PLAYER_WIDTH, height: PLAYER_HEIGHT });
 
   // Broadcast the new player to all other users
   socket.broadcast.emit("newPlayer", {
@@ -63,22 +61,25 @@ io.on("connection", (socket) => {
     if (players[socket.id]) {
       // Update player position with clamping
       players[socket.id].x = Math.max(
-        PLAYER_WIDTH / 2, 
-        Math.min(GAME_WIDTH - PLAYER_WIDTH / 2, players[socket.id].x + direction.x * MOVEMENT_SPEED)
+        PLAYER_WIDTH / 2,
+        Math.min(
+          GAME_WIDTH - PLAYER_WIDTH / 2,
+          players[socket.id].x + direction.x * MOVEMENT_SPEED
+        )
       );
       players[socket.id].y = Math.max(
-        PLAYER_HEIGHT / 2, 
-        Math.min(GAME_HEIGHT - PLAYER_HEIGHT / 2, players[socket.id].y + direction.y * MOVEMENT_SPEED)
+        PLAYER_HEIGHT / 2,
+        Math.min(
+          GAME_HEIGHT - PLAYER_HEIGHT / 2,
+          players[socket.id].y + direction.y * MOVEMENT_SPEED
+        )
       );
       players[socket.id].isNew = false;
-  
+
       // Broadcast the updated position
       io.emit("playersUpdate", players);
     }
   });
-  
-
-  
 
   // Handle player disconnect
   socket.on("disconnect", () => {
