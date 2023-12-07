@@ -31,7 +31,8 @@ const GAME_WIDTH = 2000;
 const GAME_HEIGHT = 2000;
 const PLAYER_WIDTH = 50;
 const PLAYER_HEIGHT = 50;
-const MOVEMENT_SPEED = 4;
+const MAX_SPEED = 10;
+const ROTATION_SPEED = 1.5;
 
 io.on("connection", (socket) => {
   console.log("A user connected:", socket.id);
@@ -45,9 +46,11 @@ io.on("connection", (socket) => {
     color: getRandomColor(),
     isNew: true,
     size: { width: PLAYER_WIDTH, height: PLAYER_HEIGHT },
+    velocity: 0,
+    rotation: 0, // Rotation angle in degrees
+    rotationSpeed: ROTATION_SPEED, // Degrees rotated per frame; adjust as needed
   };
 
-  // Emit the current state of all players to the newly connected user
   socket.emit("playersUpdate", players);
 
   // Broadcast the new player to all other users
@@ -57,27 +60,28 @@ io.on("connection", (socket) => {
   });
 
   // WASD
-  socket.on("playerMove", (direction) => {
-    if (players[socket.id]) {
-      // Update player position with clamping
-      players[socket.id].x = Math.max(
-        PLAYER_WIDTH / 2,
-        Math.min(
-          GAME_WIDTH - PLAYER_WIDTH / 2,
-          players[socket.id].x + direction.x * MOVEMENT_SPEED
-        )
-      );
-      players[socket.id].y = Math.max(
-        PLAYER_HEIGHT / 2,
-        Math.min(
-          GAME_HEIGHT - PLAYER_HEIGHT / 2,
-          players[socket.id].y + direction.y * MOVEMENT_SPEED
-        )
-      );
-      players[socket.id].isNew = false;
+  socket.on("playerInput", (input) => {
+    const player = players[socket.id];
+    if (player) {
+      // Store the input state
+      player.inputState = input;
 
-      // Broadcast the updated position
-      io.emit("playersUpdate", players);
+      // Handle immediate rotation
+      if (input.a) {
+        player.rotation -= player.rotationSpeed;
+      }
+      if (input.d) {
+        player.rotation += player.rotationSpeed;
+      }
+      // Handle immediate acceleration
+      if (input.w && player.velocity < MAX_SPEED) {
+        player.velocity += 0.01;
+      } else if (player.velocity > MAX_SPEED) {
+        player.velocity = MAX_SPEED;
+      }
+      if (input.s) {
+        player.velocity -= 0.1;
+      }
     }
   });
 
@@ -88,6 +92,36 @@ io.on("connection", (socket) => {
     io.emit("playersUpdate", players);
   });
 });
+
+function gameLoop() {
+  for (let id in players) {
+    const player = players[id];
+    if (!player) continue;
+
+    // Deceleration logic
+    if (!player.inputState?.w) {
+      player.velocity *= 0.999;
+      if (player.velocity < 0.5) {
+        player.velocity = 0;
+      }
+    }
+// Adjust rotation to align with the image orientation
+const adjustedRotation = player.rotation - 90; // Subtract 90 degrees
+    // Update player position
+    const radian = adjustedRotation * (Math.PI / 180);
+    player.x += player.velocity * Math.cos(radian);
+    player.y += player.velocity * Math.sin(radian);
+  }
+
+  // Emit updated state to all players
+  io.emit("playersUpdate", players);
+
+  // Schedule the next update
+  setTimeout(gameLoop, 1000 / 60);
+}
+
+// Start the game loop
+gameLoop();
 
 const port = process.env.PORT || 4000;
 server.listen(port, () => console.log(`Server listening on port ${port}`));
