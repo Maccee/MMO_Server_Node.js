@@ -110,7 +110,10 @@ function gameLoop() {
     const halfWidth = PLAYER_WIDTH / 2;
     const halfHeight = PLAYER_HEIGHT / 2;
     player.x = Math.max(halfWidth, Math.min(player.x, GAME_WIDTH - halfWidth));
-    player.y = Math.max(halfHeight, Math.min(player.y, GAME_HEIGHT - halfHeight));
+    player.y = Math.max(
+      halfHeight,
+      Math.min(player.y, GAME_HEIGHT - halfHeight)
+    );
 
     // Adjust rotation to align with the image orientation
     const adjustedRotation = player.rotation - 90; // Subtract 90 degrees
