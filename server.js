@@ -101,12 +101,19 @@ function gameLoop() {
     // Deceleration logic
     if (!player.inputState?.w) {
       player.velocity *= 0.999;
-      if (player.velocity < 0.5) {
+      if (player.velocity < 0.5 && player.velocity > -0.5) {
         player.velocity = 0;
       }
     }
-// Adjust rotation to align with the image orientation
-const adjustedRotation = player.rotation - 90; // Subtract 90 degrees
+
+    // Boundary check using center coordinates
+    const halfWidth = PLAYER_WIDTH / 2;
+    const halfHeight = PLAYER_HEIGHT / 2;
+    player.x = Math.max(halfWidth, Math.min(player.x, GAME_WIDTH - halfWidth));
+    player.y = Math.max(halfHeight, Math.min(player.y, GAME_HEIGHT - halfHeight));
+
+    // Adjust rotation to align with the image orientation
+    const adjustedRotation = player.rotation - 90; // Subtract 90 degrees
     // Update player position
     const radian = adjustedRotation * (Math.PI / 180);
     player.x += player.velocity * Math.cos(radian);
